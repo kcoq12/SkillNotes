@@ -3,7 +3,8 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Flashcards from './pages/Flashcards';
 import Exams from './pages/Exams';
-import { Questions, Profiles, Settings } from './pages/Placeholders';
+import Questions from './pages/Questions';
+import { Profiles, Settings } from './pages/Placeholders';
 
 function App() {
   return (
