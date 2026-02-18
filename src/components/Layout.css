@@ -1,0 +1,29 @@
+.app-container {
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    /* Sidebar width */
+    padding: 2rem;
+    overflow-y: scroll;
+    height: 100vh;
+    position: relative;
+
+    /* Glass effect under scrolling content */
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.98));
+}
+
+.drag-region-top {
+    position: sticky;
+    top: 0;
+    height: 32px;
+    /* Mac traffic lights */
+    width: 100%;
+    -webkit-app-region: drag;
+    z-index: 50;
+    margin-bottom: 2rem;
+}
