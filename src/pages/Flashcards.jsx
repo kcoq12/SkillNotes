@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import './Flashcards.css';
-import { Plus, Search, MoreHorizontal, Play, Edit3, Trash2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Play, Edit3 } from 'lucide-react';
+import { flashcardDecks, getRecentDecks } from '../data/studyData';
 
-const FlashcardDeck = ({ title, count, category, color }) => {
+const FlashcardDeck = ({ title, count, category, color, progress }) => {
     return (
         <div className="deck-card glass">
             <div className="deck-header">
@@ -33,7 +34,7 @@ const FlashcardDeck = ({ title, count, category, color }) => {
                 <div className="progress-track">
                     <div
                         className="progress-fill"
-                        style={{ width: `${Math.random() * 100}%`, backgroundColor: color }}
+                        style={{ width: `${progress}%`, backgroundColor: color }}
                     ></div>
                 </div>
             </div>
@@ -43,15 +44,29 @@ const FlashcardDeck = ({ title, count, category, color }) => {
 
 const Flashcards = () => {
     const [activeTab, setActiveTab] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const decks = [
-        { id: 1, title: 'Javascript Basics', count: 24, category: 'Code', color: '#f59e0b' },
-        { id: 2, title: 'React Hooks', count: 12, category: 'Frontend', color: '#6366f1' },
-        { id: 3, title: 'CSS Grid & Flexbox', count: 18, category: 'Design', color: '#ec4899' },
-        { id: 4, title: 'Node.js Backend', count: 32, category: 'Backend', color: '#10b981' },
-        { id: 5, title: 'System Design', count: 15, category: 'Architecture', color: '#3b82f6' },
-        { id: 6, title: 'SQL Queries', count: 40, category: 'Database', color: '#8b5cf6' },
-    ];
+    const decks = useMemo(() => {
+        const lowerSearch = searchTerm.trim().toLowerCase();
+        const tabFiltered = (() => {
+            if (activeTab === 'favorites') {
+                return flashcardDecks.filter((deck) => deck.favorite);
+            }
+
+            if (activeTab === 'recent') {
+                return getRecentDecks();
+            }
+
+            return flashcardDecks;
+        })();
+
+        if (!lowerSearch) {
+            return tabFiltered;
+        }
+
+        return tabFiltered.filter((deck) =>
+            `${deck.title} ${deck.category}`.toLowerCase().includes(lowerSearch));
+    }, [activeTab, searchTerm]);
 
     return (
         <div className="flashcards-page page-container animate-fade-in">
@@ -70,7 +85,12 @@ const Flashcards = () => {
                 <div className="controls-bar glass">
                     <div className="search-bar">
                         <Search size={18} className="search-icon" />
-                        <input type="text" placeholder="Search decks..." />
+                        <input
+                            type="text"
+                            placeholder="Search decks..."
+                            value={searchTerm}
+                            onChange={(event) => setSearchTerm(event.target.value)}
+                        />
                     </div>
 
                     <div className="tabs">

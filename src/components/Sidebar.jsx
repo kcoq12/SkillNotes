@@ -10,6 +10,7 @@ import {
     BrainCircuit
 } from 'lucide-react';
 import './Sidebar.css';
+import { userProfile } from '../data/studyData';
 
 const Sidebar = () => {
     const menuItems = [
@@ -59,8 +60,8 @@ const Sidebar = () => {
                         <User size={16} />
                     </div>
                     <div className="user-info">
-                        <span className="user-name">User</span>
-                        <span className="user-status">Pro Plan</span>
+                        <span className="user-name">{userProfile.name}</span>
+                        <span className="user-status">{userProfile.plan}</span>
                     </div>
                 </div>
             </div>

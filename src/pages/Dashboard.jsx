@@ -1,11 +1,12 @@
 import React from 'react';
 import './Dashboard.css';
 import { BookOpen, Layers, CheckCircle, TrendingUp, AlertCircle, PlayCircle } from 'lucide-react';
+import { getDashboardData } from '../data/studyData';
 
-const StatCard = ({ title, value, label, icon: Icon, color }) => (
+const StatCard = ({ title, value, label, icon, color }) => (
     <div className="stat-card glass" style={{ '--card-accent': color }}>
         <div className="stat-icon-wrapper">
-            <Icon size={24} className="stat-icon" />
+            {React.createElement(icon, { size: 24, className: 'stat-icon' })}
         </div>
         <div className="stat-info">
             <span className="stat-value">{value}</span>
@@ -15,50 +16,164 @@ const StatCard = ({ title, value, label, icon: Icon, color }) => (
     </div>
 );
 
-const recentActivity = [
-    { id: 1, title: 'React Hooks Mastery', type: 'Flashcards', progress: 85, color: '#6366f1' },
-    { id: 2, title: 'Advanced CSS Animation', type: 'Quiz', progress: 45, color: '#ec4899' },
-    { id: 3, title: 'Node.js Architecture', type: 'Exam', progress: 12, color: '#10b981' },
-];
+const getGreetingInfo = (date) => {
+    const hour = date.getHours();
+
+    if (hour >= 5 && hour < 12) {
+        return {
+            title: 'Good Morning',
+            quote: 'Small steps this morning build unstoppable momentum.',
+        };
+    }
+
+    if (hour >= 12 && hour < 17) {
+        return {
+            title: 'Good Afternoon',
+            quote: "Keep your focus sharp. Today's effort becomes tomorrow's confidence.",
+        };
+    }
+
+    if (hour >= 17 && hour < 21) {
+        return {
+            title: 'Good Evening',
+            quote: 'Great work so far. A focused session now makes tomorrow easier.',
+        };
+    }
+
+    return {
+        title: 'Good Night',
+        quote: 'Close the day with one clear win, then recharge for tomorrow.',
+    };
+};
 
 const Dashboard = () => {
+    const now = new Date();
+    const greeting = getGreetingInfo(now);
+    const { userProfile, stats, statusCards, weeklyStudyChart, masteryChart, recentActivity } = getDashboardData(now);
+    const todayLabel = now.toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+    });
+    const maxStudyMinutes = Math.max(...weeklyStudyChart.map((item) => item.minutes), 1);
+    const totalStudyMinutes = weeklyStudyChart.reduce((sum, item) => sum + item.minutes, 0);
+
     return (
         <div className="dashboard page-container animate-fade-in">
-            <header className="page-header">
-                <h1 className="gradient-text">Welcome back, User</h1>
-                <p>Your learning journey continues here.</p>
+            <header className="page-header greeting-banner glass">
+                <div className="greeting-content">
+                    <span className="date-chip">{todayLabel}</span>
+                    <h1 className="gradient-text">{greeting.title}, {userProfile.name}</h1>
+                    <p>Your learning journey continues here. Keep building your momentum.</p>
+                </div>
+                <blockquote className="motivation-quote">{greeting.quote}</blockquote>
             </header>
 
             <div className="stats-grid">
                 <StatCard
                     title="Total Flashcards"
-                    value="1,248"
-                    label="+24 this week"
+                    value={stats.totalFlashcards.toLocaleString()}
+                    label="Across all decks"
                     icon={Layers}
                     color="#8b5cf6"
                 />
                 <StatCard
                     title="Questions Answered"
-                    value="856"
-                    label="92% accuracy"
+                    value={stats.questionsAnswered.toLocaleString()}
+                    label={`${stats.accuracy} average score`}
                     icon={CheckCircle}
                     color="#10b981"
                 />
                 <StatCard
                     title="Current Streak"
-                    value="12 Days"
+                    value={`${stats.streakDays} Days`}
                     label="Keep it up!"
                     icon={TrendingUp}
                     color="#f59e0b"
                 />
                 <StatCard
                     title="Pending Reviews"
-                    value="45"
+                    value={stats.pendingReviews}
                     label="Due today"
                     icon={AlertCircle}
                     color="#ef4444"
                 />
             </div>
+
+            <section className="section-container">
+                <div className="section-header">
+                    <h2>Your Status</h2>
+                </div>
+
+                <div className="status-grid">
+                    {statusCards.map((status) => (
+                        <article key={status.id} className="status-card glass">
+                            <div className="status-row">
+                                <h3>{status.title}</h3>
+                                <span className="status-value">{status.value}</span>
+                            </div>
+                            <p className="status-detail">{status.detail}</p>
+                            <div className="status-track">
+                                <div
+                                    className="status-fill"
+                                    style={{ width: `${status.progress}%`, backgroundColor: status.color }}
+                                ></div>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            </section>
+
+            <section className="section-container charts-grid">
+                <article className="glass chart-card">
+                    <div className="section-header chart-header">
+                        <h2>Weekly Study Chart</h2>
+                        <span className="chart-meta">{totalStudyMinutes} mins</span>
+                    </div>
+                    <div className="vertical-chart">
+                        {weeklyStudyChart.map((item) => (
+                            <div key={item.day} className="vertical-column">
+                                <div className="vertical-track">
+                                    <div
+                                        className="vertical-bar"
+                                        style={{
+                                            height: `${(item.minutes / maxStudyMinutes) * 100}%`,
+                                            backgroundColor: item.color,
+                                        }}
+                                    ></div>
+                                </div>
+                                <span className="column-day">{item.day}</span>
+                            </div>
+                        ))}
+                    </div>
+                </article>
+
+                <article className="glass chart-card">
+                    <div className="section-header chart-header">
+                        <h2>Mastery by Topic</h2>
+                        <span className="chart-meta">Progress overview</span>
+                    </div>
+                    <div className="mastery-list">
+                        {masteryChart.map((item) => (
+                            <div key={item.topic} className="mastery-item">
+                                <div className="mastery-row">
+                                    <span>{item.topic}</span>
+                                    <span>{item.mastery}%</span>
+                                </div>
+                                <div className="mastery-track">
+                                    <div
+                                        className="mastery-fill"
+                                        style={{
+                                            width: `${item.mastery}%`,
+                                            backgroundColor: item.color,
+                                        }}
+                                    ></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </article>
+            </section>
 
             <section className="section-container">
                 <div className="section-header">
