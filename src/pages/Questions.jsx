@@ -1,48 +1,34 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Pencil, Trash2, Check, X, Layers } from 'lucide-react';
 import './Questions.css';
+import { loadQuestionBank, saveQuestionBank } from '../data/questionBank';
 
-const initialSets = [
-    { id: 1, name: 'React Basics', description: 'Core React concepts and hooks' },
-    { id: 2, name: 'JavaScript Logic', description: 'Functions, scopes, and async thinking' },
-];
-
-const initialQuestions = [
-    {
-        id: 1,
-        setId: 1,
-        prompt: 'What problem does `useEffect` solve in React?',
-        answer: 'It handles side effects after render like fetches, subscriptions, and DOM updates.',
-        difficulty: 'Medium',
-    },
-    {
-        id: 2,
-        setId: 2,
-        prompt: 'What is a closure in JavaScript?',
-        answer: 'A closure is a function that keeps access to variables from its outer scope.',
-        difficulty: 'Easy',
-    },
-];
-
-const newQuestionTemplate = {
-    setId: 1,
+const createQuestionTemplate = (setId = 1) => ({
+    setId,
     prompt: '',
     answer: '',
     difficulty: 'Easy',
-};
+});
 
 const Questions = () => {
-    const [questionSets, setQuestionSets] = useState(initialSets);
-    const [questions, setQuestions] = useState(initialQuestions);
+    const initialBank = loadQuestionBank();
+    const [questionSets, setQuestionSets] = useState(initialBank.sets);
+    const [questions, setQuestions] = useState(initialBank.questions);
     const [selectedSet, setSelectedSet] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
     const [newSetName, setNewSetName] = useState('');
     const [newSetDescription, setNewSetDescription] = useState('');
-    const [newQuestion, setNewQuestion] = useState(newQuestionTemplate);
+    const [newQuestion, setNewQuestion] = useState(
+        createQuestionTemplate(initialBank.sets[0]?.id || 1),
+    );
 
     const [editingId, setEditingId] = useState(null);
-    const [editDraft, setEditDraft] = useState(newQuestionTemplate);
+    const [editDraft, setEditDraft] = useState(createQuestionTemplate(initialBank.sets[0]?.id || 1));
+
+    useEffect(() => {
+        saveQuestionBank({ sets: questionSets, questions });
+    }, [questionSets, questions]);
 
     const selectedSetId = selectedSet === 'all' ? 'all' : Number(selectedSet);
 

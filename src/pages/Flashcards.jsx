@@ -1,72 +1,68 @@
 import React, { useMemo, useState } from 'react';
+import { Search, RotateCcw, Layers } from 'lucide-react';
 import './Flashcards.css';
-import { Plus, Search, MoreHorizontal, Play, Edit3 } from 'lucide-react';
-import { flashcardDecks, getRecentDecks } from '../data/studyData';
+import { loadQuestionBank } from '../data/questionBank';
 
-const FlashcardDeck = ({ title, count, category, color, progress }) => {
-    return (
-        <div className="deck-card glass">
-            <div className="deck-header">
-                <span className="deck-category" style={{ backgroundColor: `${color}20`, color: color }}>
-                    {category}
-                </span>
-                <button className="icon-btn">
-                    <MoreHorizontal size={18} />
-                </button>
-            </div>
+const resolveCorrectAnswer = (question) => {
+    if (question.type === 'multiple_choice') {
+        if (typeof question.correctOptionText === 'string' && question.correctOptionText.trim()) {
+            return question.correctOptionText.trim();
+        }
 
-            <div className="deck-content">
-                <h3>{title}</h3>
-                <p>{count} cards</p>
-            </div>
+        if (
+            Array.isArray(question.options)
+            && Number.isInteger(question.correctOptionIndex)
+            && question.options[question.correctOptionIndex]
+        ) {
+            return String(question.options[question.correctOptionIndex]).trim();
+        }
 
-            <div className="deck-actions">
-                <button className="action-btn play" style={{ '--btn-color': color }}>
-                    <Play size={18} />
-                    Study
-                </button>
-                <button className="action-btn edit">
-                    <Edit3 size={18} />
-                </button>
-            </div>
+        if (typeof question.correctAnswer === 'string' && question.correctAnswer.trim()) {
+            return question.correctAnswer.trim();
+        }
+    }
 
-            <div className="deck-progress">
-                <div className="progress-track">
-                    <div
-                        className="progress-fill"
-                        style={{ width: `${progress}%`, backgroundColor: color }}
-                    ></div>
-                </div>
-            </div>
-        </div>
-    );
+    if (typeof question.answer === 'string' && question.answer.trim()) {
+        return question.answer.trim();
+    }
+
+    if (typeof question.correctAnswer === 'string' && question.correctAnswer.trim()) {
+        return question.correctAnswer.trim();
+    }
+
+    return 'No answer provided yet.';
 };
 
 const Flashcards = () => {
-    const [activeTab, setActiveTab] = useState('all');
+    const initialBank = useMemo(() => loadQuestionBank(), []);
+    const [questionSets] = useState(initialBank.sets);
+    const [questions] = useState(initialBank.questions);
+    const [selectedSet, setSelectedSet] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [revealedById, setRevealedById] = useState({});
 
-    const decks = useMemo(() => {
-        const lowerSearch = searchTerm.trim().toLowerCase();
-        const tabFiltered = (() => {
-            if (activeTab === 'favorites') {
-                return flashcardDecks.filter((deck) => deck.favorite);
-            }
+    const getSetName = (setId) => questionSets.find((set) => set.id === setId)?.name || 'Uncategorized';
 
-            if (activeTab === 'recent') {
-                return getRecentDecks();
-            }
+    const lowerSearch = searchTerm.trim().toLowerCase();
+    const selectedSetId = selectedSet === 'all' ? 'all' : Number(selectedSet);
 
-            return flashcardDecks;
-        })();
+    const filteredCards = questions.filter((question) => {
+        const matchesSet = selectedSetId === 'all' || question.setId === selectedSetId;
+        const matchesSearch = !lowerSearch
+            || question.prompt.toLowerCase().includes(lowerSearch)
+            || resolveCorrectAnswer(question).toLowerCase().includes(lowerSearch)
+            || getSetName(question.setId).toLowerCase().includes(lowerSearch);
 
-        if (!lowerSearch) {
-            return tabFiltered;
-        }
+        return matchesSet && matchesSearch;
+    });
 
-        return tabFiltered.filter((deck) =>
-            `${deck.title} ${deck.category}`.toLowerCase().includes(lowerSearch));
-    }, [activeTab, searchTerm]);
+    const toggleReveal = (questionId) => {
+        setRevealedById((prev) => ({ ...prev, [questionId]: !prev[questionId] }));
+    };
+
+    const hideAllAnswers = () => {
+        setRevealedById({});
+    };
 
     return (
         <div className="flashcards-page page-container animate-fade-in">
@@ -74,11 +70,11 @@ const Flashcards = () => {
                 <div className="header-content">
                     <div>
                         <h1 className="gradient-text">Flashcards</h1>
-                        <p>Master your knowledge with spaced repetition.</p>
+                        <p>Flip each card to see only the correct answer.</p>
                     </div>
-                    <button className="primary-btn">
-                        <Plus size={20} />
-                        <span>New Deck</span>
+                    <button className="secondary-btn" type="button" onClick={hideAllAnswers}>
+                        <RotateCcw size={18} />
+                        <span>Hide All Answers</span>
                     </button>
                 </div>
 
@@ -87,50 +83,67 @@ const Flashcards = () => {
                         <Search size={18} className="search-icon" />
                         <input
                             type="text"
-                            placeholder="Search decks..."
+                            placeholder="Search flashcards..."
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
                         />
                     </div>
 
-                    <div className="tabs">
-                        <button
-                            className={`tab ${activeTab === 'all' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('all')}
-                        >
-                            All Decks
-                        </button>
-                        <button
-                            className={`tab ${activeTab === 'favorites' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('favorites')}
-                        >
-                            Favorites
-                        </button>
-                        <button
-                            className={`tab ${activeTab === 'recent' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('recent')}
-                        >
-                            Recently Studied
-                        </button>
+                    <div className="set-filter">
+                        <Layers size={16} />
+                        <select value={selectedSet} onChange={(event) => setSelectedSet(event.target.value)}>
+                            <option value="all">All Question Sets</option>
+                            {questionSets.map((set) => (
+                                <option key={set.id} value={set.id}>
+                                    {set.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </header>
 
-            <div className="decks-grid">
-                {decks.map((deck) => (
-                    <FlashcardDeck key={deck.id} {...deck} />
-                ))}
+            <section className="cards-grid">
+                {filteredCards.map((question) => {
+                    const revealed = Boolean(revealedById[question.id]);
+                    const answerText = resolveCorrectAnswer(question);
 
-                {/* Add New Deck Card */}
-                <div className="deck-card add-new glass dashed">
-                    <div className="add-content">
-                        <div className="add-icon">
-                            <Plus size={32} />
-                        </div>
-                        <h3>Create New Deck</h3>
-                    </div>
+                    return (
+                        <article key={question.id} className={`flashcard glass ${revealed ? 'revealed' : ''}`}>
+                            <div className="card-meta">
+                                <span className="set-pill">{getSetName(question.setId)}</span>
+                                <span className="difficulty-pill">{question.difficulty || 'Unrated'}</span>
+                            </div>
+
+                            {!revealed ? (
+                                <div className="card-front">
+                                    <h3>Question</h3>
+                                    <p>{question.prompt}</p>
+                                </div>
+                            ) : (
+                                <div className="card-back">
+                                    <h3>Correct Answer</h3>
+                                    <p>{answerText}</p>
+                                </div>
+                            )}
+
+                            <button
+                                className="toggle-answer-btn"
+                                type="button"
+                                onClick={() => toggleReveal(question.id)}
+                            >
+                                {revealed ? 'Hide Answer' : 'Show Correct Answer'}
+                            </button>
+                        </article>
+                    );
+                })}
+            </section>
+
+            {filteredCards.length === 0 && (
+                <div className="glass empty-state">
+                    <p>No flashcards match your current filter.</p>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

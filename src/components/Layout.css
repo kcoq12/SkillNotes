@@ -14,7 +14,7 @@
     position: relative;
 
     /* Glass effect under scrolling content */
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.98));
+    background: var(--bg-primary);
 }
 
 .drag-region-top {

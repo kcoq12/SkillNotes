@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import './Dashboard.css';
 import { BookOpen, Layers, CheckCircle, TrendingUp, AlertCircle, PlayCircle } from 'lucide-react';
 import { getDashboardData } from '../data/studyData';
+import { useProfile } from '../context/useProfile';
+import { useNavigate } from 'react-router-dom';
 
 const StatCard = ({ title, value, label, icon, color }) => (
     <div className="stat-card glass" style={{ '--card-accent': color }}>
@@ -49,7 +51,10 @@ const getGreetingInfo = (date) => {
 const Dashboard = () => {
     const now = new Date();
     const greeting = getGreetingInfo(now);
-    const { userProfile, stats, statusCards, weeklyStudyChart, masteryChart, recentActivity } = getDashboardData(now);
+    const { activeProfile } = useProfile();
+    const { stats, statusCards, weeklyStudyChart, masteryChart, recentActivity } = getDashboardData(now);
+    const navigate = useNavigate();
+    const [planItems, setPlanItems] = useState([]);
     const todayLabel = now.toLocaleDateString(undefined, {
         weekday: 'long',
         month: 'long',
@@ -57,13 +62,42 @@ const Dashboard = () => {
     });
     const maxStudyMinutes = Math.max(...weeklyStudyChart.map((item) => item.minutes), 1);
     const totalStudyMinutes = weeklyStudyChart.reduce((sum, item) => sum + item.minutes, 0);
+    const generatedAt = useMemo(
+        () => (planItems.length
+            ? new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+            : ''),
+        [planItems.length],
+    );
+
+    const handleOpenActivity = (item) => {
+        if (item.type.toLowerCase().includes('exam')) {
+            navigate('/exams');
+            return;
+        }
+
+        navigate('/flashcards');
+    };
+
+    const handleGeneratePlan = () => {
+        const weakestTopics = [...masteryChart]
+            .sort((a, b) => a.mastery - b.mastery)
+            .slice(0, 3);
+
+        const generated = weakestTopics.map((topic, index) => ({
+            id: `${topic.topic}-${index}`,
+            title: `Improve ${topic.topic}`,
+            step: `Study ${topic.topic} for ${30 + index * 15} min and complete a quick review.`,
+        }));
+
+        setPlanItems(generated);
+    };
 
     return (
         <div className="dashboard page-container animate-fade-in">
             <header className="page-header greeting-banner glass">
                 <div className="greeting-content">
                     <span className="date-chip">{todayLabel}</span>
-                    <h1 className="gradient-text">{greeting.title}, {userProfile.name}</h1>
+                    <h1 className="gradient-text">{greeting.title}, {activeProfile.name}</h1>
                     <p>Your learning journey continues here. Keep building your momentum.</p>
                 </div>
                 <blockquote className="motivation-quote">{greeting.quote}</blockquote>
@@ -178,7 +212,7 @@ const Dashboard = () => {
             <section className="section-container">
                 <div className="section-header">
                     <h2>Continue Learning</h2>
-                    <button className="text-btn">View All</button>
+                    <button className="text-btn" type="button" onClick={() => navigate('/flashcards')}>View All</button>
                 </div>
 
                 <div className="activity-grid">
@@ -197,7 +231,7 @@ const Dashboard = () => {
                                     ></div>
                                 </div>
                             </div>
-                            <button className="play-btn">
+                            <button className="play-btn" type="button" onClick={() => handleOpenActivity(item)}>
                                 <PlayCircle size={32} />
                             </button>
                         </div>
@@ -210,7 +244,18 @@ const Dashboard = () => {
                     <div className="promo-content">
                         <h2>Master your next exam</h2>
                         <p>Create a custom study plan based on your weak areas.</p>
-                        <button className="primary-btn">Create Study Plan</button>
+                        <button className="primary-btn" type="button" onClick={handleGeneratePlan}>Create Study Plan</button>
+                        {planItems.length > 0 && (
+                            <div className="plan-preview">
+                                <span className="plan-meta">Updated at {generatedAt}</span>
+                                {planItems.map((planItem) => (
+                                    <div key={planItem.id} className="plan-item">
+                                        <strong>{planItem.title}</strong>
+                                        <p>{planItem.step}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <div className="promo-visual">
                         {/* Visual element here */}
