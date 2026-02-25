@@ -110,8 +110,9 @@ const Settings = () => {
     return (
         <div className="settings-page page-container animate-fade-in">
             <header className="page-header">
+                <div className="date-chip">System Preferences</div>
                 <h1 className="gradient-text">Settings</h1>
-                <p>Manage app preferences, data, legal pages, and account controls.</p>
+                <p className="motivation-quote">Fine-tune your study atmosphere and data.</p>
             </header>
 
             {statusMessage && (

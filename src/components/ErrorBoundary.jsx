@@ -18,17 +18,55 @@ class ErrorBoundary extends React.Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div style={{ padding: '2rem', color: '#ef4444', background: '#0f172a', height: '100vh', overflow: 'auto' }}>
-                    <h1>Something went wrong.</h1>
-                    <details style={{ whiteSpace: 'pre-wrap' }}>
+                <div style={{
+                    padding: '4rem 2rem',
+                    color: '#f8fafc',
+                    background: '#050811',
+                    height: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'Inter, sans-serif',
+                    textAlign: 'center'
+                }}>
+                    <h1 className="gradient-text" style={{ fontSize: '3rem', marginBottom: '1rem' }}>Something went wrong.</h1>
+                    <p style={{ color: '#94a3b8', maxWidth: '600px', marginBottom: '2rem' }}>
+                        The neural link encountered an unexpected anomaly.
+                        Please review the diagnostics below or refresh the mission.
+                    </p>
+                    <details className="glass" style={{
+                        whiteSpace: 'pre-wrap',
+                        padding: '1.5rem',
+                        borderRadius: '16px',
+                        maxWidth: '800px',
+                        width: '100%',
+                        textAlign: 'left',
+                        marginBottom: '2rem',
+                        fontSize: '0.9rem',
+                        color: '#fca5a5'
+                    }}>
+                        <summary style={{ cursor: 'pointer', marginBottom: '0.5rem', fontWeight: 'bold', color: '#ef4444' }}>Diagnostic Report</summary>
                         {this.state.error && this.state.error.toString()}
                         <br />
                         {this.state.errorInfo && this.state.errorInfo.componentStack}
                     </details>
-                    <button onClick={() => window.location.reload()} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
-                        Reload App
+                    <button
+                        onClick={() => window.location.reload()}
+                        style={{
+                            padding: '1rem 2rem',
+                            borderRadius: '14px',
+                            background: '#6366f1',
+                            color: 'white',
+                            fontWeight: '700',
+                            border: 'none',
+                            cursor: 'pointer',
+                            boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+                        }}
+                    >
+                        Re-initialize System
                     </button>
-                </div>
+                </div >
             );
         }
 

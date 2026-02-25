@@ -1,18 +1,36 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    titleBarStyle: 'hiddenInset', // Mac-style frameless with traffic lights
+    titleBarStyle: 'hidden', // Fully frameless to use custom controls
+    frame: false, // Ensure native frame is off
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
-    vibrancy: 'under-window', // sleek Mac effect
+    vibrancy: 'under-window',
     visualEffectState: 'active',
+  });
+
+  // Window management IPC
+  ipcMain.on('window-minimize', () => {
+    mainWindow.minimize();
+  });
+
+  ipcMain.on('window-maximize', () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  });
+
+  ipcMain.on('window-close', () => {
+    mainWindow.close();
   });
 
   // Load the app

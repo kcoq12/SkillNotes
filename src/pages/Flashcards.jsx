@@ -69,8 +69,9 @@ const Flashcards = () => {
             <header className="page-header">
                 <div className="header-content">
                     <div>
-                        <h1 className="gradient-text">Flashcards</h1>
-                        <p>Flip each card to see only the correct answer.</p>
+                        <div className="date-chip">Tactile Learning</div>
+                        <h1 className="gradient-text">Study Cards</h1>
+                        <p className="motivation-quote">Flip, reveal, and master your knowledge.</p>
                     </div>
                     <button className="secondary-btn" type="button" onClick={hideAllAnswers}>
                         <RotateCcw size={18} />
@@ -109,31 +110,29 @@ const Flashcards = () => {
                     const answerText = resolveCorrectAnswer(question);
 
                     return (
-                        <article key={question.id} className={`flashcard glass ${revealed ? 'revealed' : ''}`}>
-                            <div className="card-meta">
-                                <span className="set-pill">{getSetName(question.setId)}</span>
-                                <span className="difficulty-pill">{question.difficulty || 'Unrated'}</span>
+                        <article
+                            key={question.id}
+                            className={`flashcard ${revealed ? 'revealed' : ''}`}
+                            onClick={() => toggleReveal(question.id)}
+                        >
+                            <div className="card-front">
+                                <div className="card-meta">
+                                    <span className="set-pill">{getSetName(question.setId)}</span>
+                                    <span className="difficulty-pill">{question.difficulty || 'Unrated'}</span>
+                                </div>
+                                <h3>Question</h3>
+                                <p>{question.prompt}</p>
+                                <button className="toggle-answer-btn" type="button">Flip Card</button>
                             </div>
 
-                            {!revealed ? (
-                                <div className="card-front">
-                                    <h3>Question</h3>
-                                    <p>{question.prompt}</p>
+                            <div className="card-back">
+                                <div className="card-meta">
+                                    <span className="set-pill">{getSetName(question.setId)}</span>
                                 </div>
-                            ) : (
-                                <div className="card-back">
-                                    <h3>Correct Answer</h3>
-                                    <p>{answerText}</p>
-                                </div>
-                            )}
-
-                            <button
-                                className="toggle-answer-btn"
-                                type="button"
-                                onClick={() => toggleReveal(question.id)}
-                            >
-                                {revealed ? 'Hide Answer' : 'Show Correct Answer'}
-                            </button>
+                                <h3>Correct Answer</h3>
+                                <p>{answerText}</p>
+                                <button className="toggle-answer-btn" type="button">Go Back</button>
+                            </div>
                         </article>
                     );
                 })}

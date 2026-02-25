@@ -1,29 +1,44 @@
 .app-container {
     display: flex;
     min-height: 100vh;
-    background: var(--bg-primary);
+    background-color: var(--bg-primary);
+    overflow: hidden;
 }
 
 .main-content {
     flex: 1;
-    margin-left: 260px;
-    /* Sidebar width */
-    padding: 2rem;
-    overflow-y: scroll;
+    margin-left: 320px;
+    /* sidebar width + margin */
+    padding: 2rem 3rem 2rem 1rem;
     height: 100vh;
-    position: relative;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    transition: var(--transition-smooth);
+}
 
-    /* Glass effect under scrolling content */
-    background: var(--bg-primary);
+.layout-top-bar {
+    position: fixed;
+    top: 0;
+    left: 320px;
+    /* Sidebar width + margin match */
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    z-index: 1000;
 }
 
 .drag-region-top {
-    position: sticky;
+    position: absolute;
     top: 0;
-    height: 32px;
-    /* Mac traffic lights */
-    width: 100%;
+    left: 0;
+    right: 135px;
+    /* Offset for window controls (45px * 3) */
+    height: 40px;
     -webkit-app-region: drag;
-    z-index: 50;
-    margin-bottom: 2rem;
+}
+
+/* Sidebar also needs a drag region if the logo area should be draggable */
+.sidebar-header {
+    -webkit-app-region: drag;
 }

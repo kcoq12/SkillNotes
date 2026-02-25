@@ -1,20 +1,24 @@
 import React, { useMemo, useState } from 'react';
 import './Dashboard.css';
-import { BookOpen, Layers, CheckCircle, TrendingUp, AlertCircle, PlayCircle } from 'lucide-react';
+import { BookOpen, Layers, CheckCircle, TrendingUp, AlertCircle, PlayCircle, Sparkles } from 'lucide-react';
 import { getDashboardData } from '../data/studyData';
 import { useProfile } from '../context/useProfile';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { trackGrowthEvent } from '../data/growthEvents';
 
 const StatCard = ({ title, value, label, icon, color }) => (
     <div className="stat-card glass" style={{ '--card-accent': color }}>
-        <div className="stat-icon-wrapper">
-            {React.createElement(icon, { size: 24, className: 'stat-icon' })}
+        <div className="stat-card-inner">
+            <div className="stat-icon-wrapper">
+                {React.createElement(icon, { size: 28, className: 'stat-icon' })}
+            </div>
+            <div className="stat-info">
+                <span className="stat-value">{value}</span>
+                <h3 className="stat-title">{title}</h3>
+                <p className="stat-label">{label}</p>
+            </div>
         </div>
-        <div className="stat-info">
-            <span className="stat-value">{value}</span>
-            <h3 className="stat-title">{title}</h3>
-            <p className="stat-label">{label}</p>
-        </div>
+        <div className="stat-card-glow" />
     </div>
 );
 
@@ -54,6 +58,18 @@ const Dashboard = () => {
     const { activeProfile } = useProfile();
     const { stats, statusCards, weeklyStudyChart, masteryChart, recentActivity } = getDashboardData(now);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const pendingChallenge = useMemo(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('challenge') !== '1') return null;
+        return {
+            setId: Number(params.get('setId')),
+            target: Number(params.get('target')),
+            from: params.get('from') || 'A friend',
+            setName: params.get('setName') || 'Study Set'
+        };
+    }, [location.search]);
     const [planItems, setPlanItems] = useState([]);
     const todayLabel = now.toLocaleDateString(undefined, {
         weekday: 'long',
@@ -102,6 +118,29 @@ const Dashboard = () => {
                 </div>
                 <blockquote className="motivation-quote">{greeting.quote}</blockquote>
             </header>
+
+            {pendingChallenge && (
+                <section className="section-container glass challenge-alert animate-float">
+                    <div className="challenge-alert-content">
+                        <div className="alert-icon">
+                            <Sparkles size={24} />
+                        </div>
+                        <div className="alert-text">
+                            <h3>Challenge from {pendingChallenge.from}</h3>
+                            <p>They want to see if you can beat <strong>{pendingChallenge.target}%</strong> on the {pendingChallenge.setName} exam.</p>
+                        </div>
+                    </div>
+                    <button className="primary-btn" onClick={() => {
+                        trackGrowthEvent('challenge_accepted', {
+                            setId: pendingChallenge.setId,
+                            from: pendingChallenge.from
+                        });
+                        navigate(`/exams${location.search}`);
+                    }}>
+                        Accept Challenge
+                    </button>
+                </section>
+            )}
 
             <div className="stats-grid">
                 <StatCard

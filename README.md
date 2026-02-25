@@ -4,11 +4,10 @@ A breathtaking, frameless Electron desktop application for studying, featuring f
 
 ## Features
 
-- **Frameless Window**: Modern, app-like experience with custom window controls.
-- **Dark Mode Aesthetic**: Deep slate and indigo color palette with glassmorphism effects.
-- **Dashboard**: Track your progress and recent activity.
-- **Flashcards**: Organize and study decks with spaced repetition interface.
-- **Exams**: Manage upcoming tests and review history.
+- **Cinematic Dark Aesthetic**: Ultra-deep midnight theme with multi-layered glassmorphism and fractal noise texturing.
+- **"Genius Score" Challenge**: Viral acquisition loop with encoded performance sharing and Dashboard deep-linking.
+- **Dynamic Interactions**: Tactile 3D flip effects for flashcards and rhythmic background animations.
+- **Assessment Hub**: Built-in performance analytics and challenge acceptance flows.
 
 ## Development
 

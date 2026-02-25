@@ -141,8 +141,9 @@ const Questions = () => {
     return (
         <div className="questions-page page-container animate-fade-in">
             <header className="page-header">
-                <h1 className="gradient-text">Questions</h1>
-                <p>Add, edit, delete questions, and organize them into sets.</p>
+                <div className="date-chip">Content Management</div>
+                <h1 className="gradient-text">Question Bank</h1>
+                <p className="motivation-quote">Organize your knowledge, one question at a time.</p>
             </header>
 
             <section className="section-container questions-grid-top">

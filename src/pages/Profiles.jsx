@@ -83,8 +83,9 @@ const Profiles = () => {
     return (
         <div className="profiles-page page-container animate-fade-in">
             <header className="page-header">
+                <div className="date-chip">Community & Identity</div>
                 <h1 className="gradient-text">Profiles</h1>
-                <p>Switch profiles, edit profile details, and level up badges with XP.</p>
+                <p className="motivation-quote">Manage your academic identity and achievements.</p>
             </header>
 
             <section className="section-container">

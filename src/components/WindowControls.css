@@ -1,0 +1,43 @@
+.window-controls {
+    display: flex;
+    gap: 0;
+    -webkit-app-region: no-drag;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-bottom-left-radius: 12px;
+    border: var(--glass-border);
+    border-top: none;
+    border-right: none;
+    overflow: hidden;
+}
+
+.control-btn {
+    width: 45px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.control-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.control-btn.close:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.control-btn svg {
+    opacity: 0.8;
+}
+
+.control-btn:hover svg {
+    opacity: 1;
+}

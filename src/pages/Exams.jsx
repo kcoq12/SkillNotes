@@ -1,7 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { PlayCircle, Trophy, CheckCircle2, XCircle, FileText, ChevronRight } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { PlayCircle, Trophy, CheckCircle2, XCircle, FileText, ChevronRight, Share2, Sparkles } from 'lucide-react';
 import './Exams.css';
 import { loadExamAttempts, loadQuestionBank, saveExamAttempts } from '../data/questionBank';
+import { getGrowthMetrics, trackGrowthEvent } from '../data/growthEvents';
+import { useProfile } from '../context/useProfile';
+import { useLocation } from 'react-router-dom';
 
 const normalizeText = (value) =>
     value
@@ -35,7 +38,35 @@ const formatAttemptDate = (isoDate) =>
         minute: '2-digit',
     });
 
+const copyTextToClipboard = async (value) => {
+    const text = String(value || '');
+
+    if (!text) {
+        return false;
+    }
+
+    if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.pointerEvents = 'none';
+
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    return copied;
+};
+
 const Exams = () => {
+    const { activeProfile } = useProfile();
+    const location = useLocation();
     const initialBank = loadQuestionBank();
     const [questionSets] = useState(initialBank.sets);
     const [questions] = useState(initialBank.questions);
@@ -46,6 +77,9 @@ const Exams = () => {
     const [answersByQuestionId, setAnswersByQuestionId] = useState({});
     const [draftAnswer, setDraftAnswer] = useState('');
     const [lastAttempt, setLastAttempt] = useState(null);
+    const [shareStatus, setShareStatus] = useState('');
+    const [growthMetrics, setGrowthMetrics] = useState(() => getGrowthMetrics());
+    const trackedChallengeKeyRef = useRef('');
 
     useEffect(() => {
         saveExamAttempts(attempts);
@@ -59,6 +93,41 @@ const Exams = () => {
             })),
         [questionSets, questions],
     );
+
+    const challengeContext = useMemo(() => {
+        const params = new URLSearchParams(location.search);
+
+        if (params.get('challenge') !== '1') {
+            return null;
+        }
+
+        const setId = Number(params.get('setId'));
+        const target = Number(params.get('target'));
+        const challenger = (params.get('from') || 'A friend').slice(0, 36);
+        const set = questionSets.find((item) => item.id === setId);
+
+        return {
+            key: `${setId}-${target}-${challenger}`,
+            setId,
+            target: Number.isFinite(target) ? Math.max(0, Math.min(100, target)) : 0,
+            challenger,
+            setName: set?.name || null,
+        };
+    }, [location.search, questionSets]);
+
+    useEffect(() => {
+        if (!challengeContext || challengeContext.key === trackedChallengeKeyRef.current) {
+            return;
+        }
+
+        trackedChallengeKeyRef.current = challengeContext.key;
+        trackGrowthEvent('challenge_opened', {
+            setId: challengeContext.setId,
+            target: challengeContext.target,
+            setFound: Boolean(challengeContext.setName),
+        });
+        setGrowthMetrics(getGrowthMetrics());
+    }, [challengeContext]);
 
     const activeQuestion = useMemo(() => {
         if (!activeExam) {
@@ -100,6 +169,47 @@ const Exams = () => {
         setAnswersByQuestionId({});
         setDraftAnswer('');
         setLastAttempt(null);
+        setShareStatus('');
+    };
+
+    const handleShareChallenge = async (attempt) => {
+        if (!attempt?.setId) {
+            return;
+        }
+
+        const challengeTarget = Math.max(60, Math.min(100, attempt.score));
+        const params = new URLSearchParams({
+            challenge: '1',
+            setId: String(attempt.setId),
+            target: String(challengeTarget),
+            from: activeProfile.name,
+            setName: attempt.setName,
+        });
+        const challengeUrl = `${window.location.origin}${window.location.pathname}#/dashboard?${params.toString()}`;
+
+        const shareMessage = [
+            `I scored ${attempt.score}% on "${attempt.setName}" in SkillNotes.`,
+            `Can you beat my ${challengeTarget}% challenge?`,
+            challengeUrl,
+        ].join(' ');
+
+        trackGrowthEvent('share_clicked', {
+            setId: attempt.setId,
+            score: attempt.score,
+            target: challengeTarget,
+        });
+
+        try {
+            const copied = await copyTextToClipboard(shareMessage);
+            if (!copied) {
+                throw new Error('copy-failed');
+            }
+            setShareStatus('Challenge link copied. Share it with your study group.');
+        } catch {
+            setShareStatus('Could not copy automatically. Please copy from browser location instead.');
+        }
+
+        setGrowthMetrics(getGrowthMetrics());
     };
 
     const persistCurrentAnswer = () => {
@@ -198,12 +308,33 @@ const Exams = () => {
     return (
         <div className="exams-page page-container animate-fade-in">
             <header className="page-header">
+                <div className="date-chip">Assessment Hub</div>
                 <h1 className="gradient-text">Exams & Quizzes</h1>
-                <p>Select a question set and take an exam instantly.</p>
+                <p className="motivation-quote">Put your knowledge to the ultimate test.</p>
             </header>
 
             <div className="exams-layout">
                 <div className="main-col">
+                    {!activeExam && challengeContext && challengeContext.setName && (
+                        <section className="section-container glass challenge-banner">
+                            <div className="challenge-copy">
+                                <p className="challenge-kicker">Challenge Received</p>
+                                <h2>{challengeContext.challenger} challenged you on {challengeContext.setName}</h2>
+                                <p>Target score: {challengeContext.target}%</p>
+                            </div>
+                            <button className="start-btn" type="button" onClick={() => {
+                                trackGrowthEvent('challenge_accepted', {
+                                    setId: challengeContext.setId,
+                                    from: challengeContext.challenger
+                                });
+                                startExam(challengeContext.setId);
+                            }}>
+                                <Sparkles size={16} />
+                                Accept Challenge
+                            </button>
+                        </section>
+                    )}
+
                     {!activeExam && (
                         <section className="section-container">
                             <h2 className="section-title">Question Sets</h2>
@@ -274,11 +405,18 @@ const Exams = () => {
                         <section className="section-container glass exam-result">
                             <div className="result-head">
                                 <h2>{lastAttempt.setName} Result</h2>
-                                <span className="result-score">{lastAttempt.score}%</span>
+                                <div className="result-actions">
+                                    <span className="result-score">{lastAttempt.score}%</span>
+                                    <button type="button" className="share-btn" onClick={() => handleShareChallenge(lastAttempt)}>
+                                        <Share2 size={14} />
+                                        Share Challenge
+                                    </button>
+                                </div>
                             </div>
                             <p>
                                 You got {lastAttempt.correctCount} out of {lastAttempt.totalQuestions} correct.
                             </p>
+                            {shareStatus && <p className="share-status">{shareStatus}</p>}
                             <div className="result-list">
                                 {lastAttempt.details.map((detail) => (
                                     <div key={detail.id} className="result-item">
@@ -366,6 +504,19 @@ const Exams = () => {
                         <div className="quick-icon-row">
                             <Trophy size={16} />
                             <span>{attempts.length} attempts recorded</span>
+                        </div>
+                    </div>
+
+                    <div className="quick-start">
+                        <h3>Challenge Loop</h3>
+                        <p>Track how often exam results are shared and challenge links are opened.</p>
+                        <div className="quick-icon-row">
+                            <Share2 size={16} />
+                            <span>{growthMetrics.shareClicked} share clicks</span>
+                        </div>
+                        <div className="quick-icon-row">
+                            <Sparkles size={16} />
+                            <span>{growthMetrics.challengeAccepted} challenge accepts</span>
                         </div>
                     </div>
                 </aside>
